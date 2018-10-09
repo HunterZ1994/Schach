@@ -11,17 +11,26 @@ import java.util.HashSet;
 import schach.daten.*;
 
 public class Spiel {
-	private D_Spiel daten;
+	private D_Spiel daten;	//D_Spiel ergibt sich aus D
 	private ArrayList<Belegung> belegungen;
 	// inital constructor.
+	//        Die Klasse Spiel besitzt zwei Konstruktoren:
+//        1. einen initialen Konstruktor, der ein komplett neues Spiel aufsetzt.
+//			-> Dieser greift zunächst auf D_Spiel zu und erstellt ein Neues Spiel.
+//			-> Anschließend wird eine neue ArrayListe mit den Belegungen des Spielfeldes (Den Positionen aller Figuren) erstellt.
+//
+//        2. einen Konstruktor mit einem Pfad zu einer XML Datei als Parameter.
+//			-> Dieser ließt die gegebe Datei ein und speichert ihre Werte in einem String, welcher in das XML Format codiert und als StringArray gespeichert wird.
+//			-> Anschließend wird das Spiel anhand der im Array gespeicherten Züge rekonstruiert.
 	public Spiel(){
 		daten=new D_Spiel();
 		belegungen=new ArrayList<Belegung>();
 	}
-	
+	//Constructor contaiing a path to a saved game.
 	public Spiel(String pfad) {
-		this();
+		this();		//calling the initial constructor
 		BufferedReader br=null;
+		// reading the file with the saved game status
 		try {
 			pfad=URLDecoder.decode(""+pfad,"ISO-8859-1");
 			StringBuffer xml=new StringBuffer();
@@ -30,12 +39,14 @@ public class Spiel {
 	    while (zeile!=null){
 	    	xml.append(zeile+"/n");
 	      zeile=br.readLine(); 
-	    } 
+	    }
+	    //converting the read file into an ArrayList
 	    ArrayList<D> spielDaten=Xml.toArray(xml.toString());
 	    int counter=0;
 	    // Daten des Spiels
 	    daten=(D_Spiel)spielDaten.get(counter);
 	    counter++;
+	    // replaying the game with the saved moves to the point were it has been saved
 	    for(int i=0;i<=daten.getInt("anzahlZuege");i++){
 	    	// Belegungen
 		    Belegung b=new Belegung();
@@ -61,7 +72,7 @@ public class Spiel {
 		}
     catch (Exception e){
 			throw new RuntimeException("Fehler beim Laden des Spiels von "+pfad+": "+e.getMessage());
-		} 	
+		}
 		finally{
 			try {
 				br.close();
@@ -72,13 +83,18 @@ public class Spiel {
 	public D_Spiel getDaten(){
 		return daten;
 	}
+	// setzt die initiale Belegung der Figuren auf die Standardbelegung nach einem gegebenen Regelwerk
 
+	//        Die Methode initStandardbelegung:
+//        Diese Methode setzt das Schachbrett für eine neue Partie auf.
 	public void initStandardbelegung(){
 		Belegung belegung=new Belegung();
 		Regelwerk.setStartbelegung(belegung);
 		belegungen.add(belegung);
 	}
-	
+	//        Die Methode getAnzahlZüge:
+//        Da jede veränderung der Belegung (jeder Zug) in einer Liste gespeichert wird, lässt sich die Anzahl der bisherigen Züge aus deren Größe ableiten. Diese wird daher zurück gegeben.
+//
 	public int getAnzahlZuege(){
 		return belegungen.size()-1;
 	}
@@ -99,6 +115,10 @@ public class Spiel {
 		return belegungen.get(nummer);
 	}
 
+	//liefert alle bisherigen Züge als array Liste, da diese in Daten gespeichert werden.
+	//                Die methode getZugHistorie:
+//        Sie liefert die Liste aller Belegungen seit beginn der Partie als Liste zurück. Hierbei werden alle Züge in einer internen Notation, in der lediglich eine Bewegung von Feld A nach Feld B
+//        gespeichert wurde. Um welche Figur es sich dabei handelt, lässt sich nur aus der Historie aller Züge zu diesem Feld rekonstruieren.
 	public ArrayList<String> getZugHistorie() {
 		ArrayList<String> zugHistorie=new ArrayList<String>();
 		for(int i=1;i<=daten.getInt("anzahlZuege");i++){
@@ -106,7 +126,11 @@ public class Spiel {
 		}
 		return zugHistorie;
 	}
-	
+	//                Die Methode getAlleErlaubtenZüge:
+//        Sie liefert alle möglichen Positionen, an die eine Figur von einer bestimmten Position aus ziehen kann als HashSet zurück. Hierbei beteachtet die aktuelle Belegung, welche Figur sich
+//        an der gegebenen Position befindet und gibt für diese ale möglichen Züge an. (Ein Bauer kann schließlich nicht so laufen wie ein Turm)
+//
+
 	public HashSet<Zug> getAlleErlaubteZuege(){
 		return getAktuelleBelegung().getAlleErlaubteZuege(isWeissAmZug());
 	}
@@ -114,7 +138,9 @@ public class Spiel {
 	public HashSet<Zug> getErlaubteZuege(String position){
 		return getAktuelleBelegung().getErlaubteZuege(position);
 	}
-	
+//       Die Matt/Patt Methoden:
+	//        Die Klasse Belegung entscheidet darüber, ob es für eine Farbe bzw. für beide Farben keine Zugmöglichkeiten mehr gibt.
+//
 	public boolean isWeissImSchach(){
 		return getAktuelleBelegung().isSchach(true);
 	}
@@ -135,8 +161,34 @@ public class Spiel {
 		return getAktuelleBelegung().isPatt(isWeissAmZug());
 	}
 	
-
-
+	//ausführen eines Zuges. Ziehe Figur an position x,y nach position z,a
+	//                Die Methode ziehen:
+//        Diese Methode nimmt zwei Positionen als Parameter. Hierbei beschreibt die Erste, die Position auf der eine Figur steht und die Zweite, die an der sie nach dem Zug stehen soll.
+//        Zunächst wird die aktuelle Belegung des Feldes gecloned und die Figur an der gegebenen Position ausgewählt. Sollte an dieser Position keine Figur stehen (Figur f = Belegung.getFigur(von) == null)
+//        wird eine Fehlermeldung ausgegeben.
+//
+//        Sollte kein Zug möglich sein, wird die Fehlermedung "Das Spiel ist bereits zu Ende" ausgegeben.
+//
+//                Sollte die Partei zeihen, die nicht am Zug ist, wird "Sie sind nicht am Zug" ausgegeben.
+//
+//                Nun werden alle erlaubten Züge von der aktuellen Position aus in einem Set gespeichert.
+//                hier wird der anvisierte Zug gegengewogen. D. h. ist der anviserte Zug im Set vorhanden, kann er ausgeführt werden. Falls nicht, wird "Zug ist nicht erlaubt" ausgegeben.
+//
+//                Schlussendlich wird über die Methode moveFigur der Klasse Belegung die Position der aktuellen Figur angepasst und der Zug der Liste der Züge hinzugefügt.
+//
+//        Sollte es sich bei dem Zug um eine Rochade handeln, so wird diese in einem Kommentar vermerkt.
+//
+//        Ebenso wenn es sich um ein enPassant, d.h. ein Bauer macht zwei Schritte aus der Startposition herraus, so wird für diesen Bauer ein Marker gesetzt, wodurch er keinen Doppelschritt
+//        mehr vornehmen kann. //Kommentar: Mir scheint, als sei der Doppelschritt auch nach den Zug aus der Startposition herraus noch möglich. Bitte um klärung.
+//
+//                Darüber hinaus wird abgefragt, ob ein Bauer in eine andere Figur umgewandelt werden kann. Hierzu wird in der Belegung nachgesehen, ob der Bauer nach dem Zug im Haus des Gegners steht.
+//        Falls ja, wird er aus dem Speil entfernt, und an seiner statt eine andere Figur auf die gegebene Position gesetzt.
+//
+//                Sollte ein Spieler im Schach stehen, so wird dies im Spielstatus vermerkt, da er nun lediglich seinen König aus dem Schach bringen kann und kein anderer sonst gültiger Zug in dieser Situation
+//        zulässig ist.
+//
+//        Am Ende werden nun noch die Daten, also die Aktuelle Belegung, die Zughistorie, die Anzahl der Züge, sowie Bemerkungen und Spielstatus aktuallisiert und die Belegung nach dem Zug zurück gegeben.
+//
 	public Belegung ziehe(String von,String nach) {
 		Belegung b=getAktuelleBelegung();
 		Belegung bNeu=null;
@@ -157,7 +209,7 @@ public class Spiel {
 		// ich bin nicht am Zug
 		if(f.isWeiss()!=isWeissAmZug())
 			throw new RuntimeException("ziehe: Sie sind nicht am Zug!");
-		// ist der Zug erlaubt
+		// ist der Zug erlaubt prüft, ob der eingegebene Zug in der errechneten Liste aller aus dieser Position erlaubten Züge enthaöten ist.
 		HashSet<Zug> erlaubteZuege=b.getErlaubteZuege(f.getPosition());
 		if (!erlaubteZuege.contains(new Zug(von,nach)))
 			throw new RuntimeException("ziehe: Der Zug "+f.getTyp()+" von "+von+" nach "+nach+" ist nicht erlaubt!");
@@ -241,7 +293,9 @@ public class Spiel {
 
 		return bNeu;	
 	}
-	
+	//speichert die aktuele belegung des Brettes und alle bisher gespielten Züge in einer XML Datei.
+	//        Die Methode Speichern:
+//        Diese Methode speichert die gesammze Zughistorie durch die toXML Methode in einer angegenenen Datei.
 	public String speichern(String pfad){
 		PrintWriter pw=null;
 		try {
@@ -258,7 +312,8 @@ public class Spiel {
 			pw.close();			
 		}
 	}
-	
+	//        Die Methode toXML:
+//        Diese Methode fügt alle bisher erfolgten Züge zu einem String im XML format hinzu und gibt diesen Zurück.
 	public String toXml(){
 		StringBuffer s=new StringBuffer(daten.toXml());
 		for(int i=0;i<=daten.getInt("anzahlZuege");i++){
@@ -266,7 +321,9 @@ public class Spiel {
 		}
 		return s.toString();
 	}
-	
+	// Umwandeln eines bereits gespielten Zuges in 	eine leicht lesbare Notation.
+	//        die Methode getZugAlsNotation:
+//        Diese Methode wandelt einen Zug aus der Zughistorie mit einem bestimmten Index in einen String mit vorgefärtigeter Notation um und gibt diesen Zurück.
 	private String getZugAlsNotation(int nummer){
 		if ((nummer<1)||(nummer>belegungen.size()))
 			throw new RuntimeException("getZugAlsNotation: Diese Zugnummer existiert nicht!");
@@ -307,4 +364,17 @@ public class Spiel {
 
 		return s;
 	}
+	//                Die interne Notation:
+//        Wurde eine Figur geschlagen, so wird sie der Liste der Geschlagenen Figuren hinzugefügt.
+//        Handelt es sich um eine Rochade, so wird "0-0" für die kurze- und "0-0-0" für die lange Rochade zurück gegeben.
+//        Andernfalls besteht der String aus dem Kürzel der bewegten Figur, der Position, von der Sie sich bewegt hat, sollte sie eine Figur geschlagen haben einem "x", ansonsten einem "-"
+//        und der Position, an der sie vorher gestanden hat.
+//                Solte ein Bauer umgewandelt worden sein, so wird das Kürzel der neuen Figur and den String angehängt.
+//        Sollte ein Bauer einen Doppelschritt gemacht haben wird "e.p." angehängt.
+//                Bei einem Patt wird ein "=" angehängt, bei einem Schach ein "+" und bei einem Schach Matt ein "++"
+//        Dieser String wird am Ende zurück gegeben.
+//                Beispeil:
+//        Ein Schwarzer Läufer steht auf A3. Er zieht nach E7 und schlägt einen weißen Bauern.
+//                Die gespeicherte Notation wäre die Folgende:
+//        L13x57
 }
