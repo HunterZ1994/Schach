@@ -6,8 +6,15 @@ import schach.daten.SpielEnum;
 import schach.daten.ZugEnum;
 
 public class Zug {
+	
+	/*
+	 * Das Objekt 'D_Zug'hat die Eigenschaften "Von", "Nach", "Status" und "Bemerkung" jeweils als String
+	*/
 	private D_Zug daten;
-
+	
+	/*
+	 * Der Konstruktor ohne Parameter erzeugt eine Instanz von D_Zug.
+	*/
 	private Zug(){
 		daten=new D_Zug();
 	}
@@ -20,6 +27,9 @@ public class Zug {
 		setStatus(daten.getString("status"));			
 	}
 
+	/*
+	 * Beim Aufrufen dieses Konstrukors, überergibt man nur zwei Koordinaten als String. Bemerkung und Status haben einen leeren String ("").
+	*/
 	public Zug(String von,String nach){
 		this();
 		setVon(von);
@@ -28,6 +38,9 @@ public class Zug {
 		setStatus("");
 	}
 	
+	/*
+	 * Die Beiden übergebenen Integer-Werte, werden in den Methoden "toSchachNotation" und "toZeichen", die in der Klasse Belegung sind, in einen String-Wert umgewandelt.
+	 */
 	public Zug(String von,int nachX,int nachY){
 		this(von,Belegung.toSchachNotation(nachX,nachY));
 	}
@@ -81,6 +94,9 @@ public class Zug {
 		return daten.getString("von")+daten.getString("nach");
 	}
 	
+	/*
+	 * Überprüfen, ob zwei Züge gleich sind.
+	*/
 	@Override
 	public boolean equals(Object o){
 		if (!(o instanceof Zug)) return false;
